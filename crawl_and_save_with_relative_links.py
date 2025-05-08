@@ -7,6 +7,7 @@ from urllib.parse import urljoin, urlparse
 # Crawl and Save Full Site with Monolith
 # =========================================
 # Author: Cyril Wolfangel
+# Edits by Xyvir
 # =========================================
 
 def save_page(url, output_dir):
@@ -55,14 +56,20 @@ def adjust_links_in_file(filepath, base_url):
             attr = 'href' if tag.name in ['a', 'link'] else 'src'
             if tag.has_attr(attr):
                 original_url = tag[attr]
-                if original_url.startswith(base_url):
+                
+                # Handle links that match the base URL exactly
+                if original_url == base_url or original_url == base_url.rstrip('/'):
+                    tag[attr] = f"file:///{os.path.join(os.getcwd(), base_folder, 'index.html').replace('\\', '/')}"
+
+                # Handle links that start with the base URL
+                elif original_url.startswith(base_url):
                     parsed_url = urlparse(original_url)
                     if parsed_url.path and parsed_url.path.strip('/'):
                         # Convert to absolute path including the "per-site" folder
                         absolute_path = os.path.join(
                             os.getcwd(), base_folder, parsed_url.path.strip('/')
                         ).replace('\\', '/')
-                        absolute_path = f"file:///{absolute_path}"
+                        absolute_path = f"file:///{absolute_path if absolute_path.endswith('.html') else absolute_path + '.html'}"
                         tag[attr] = absolute_path
 
         with open(filepath, 'w', encoding='utf-8') as file:
